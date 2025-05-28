@@ -45,9 +45,27 @@ class Note
     #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'notes')]
     private Collection $tag;
 
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'modifiedBy')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?self $note = null;
+
+    /**
+     * @var Collection<int, self>
+     */
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'note')]
+    private Collection $modifiedBy;
+
+    /**
+     * @var Collection<int, self>
+     */
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'modifiedBy')]
+    private Collection $notes;
+
     public function __construct()
     {
         $this->tag = new ArrayCollection();
+        $this->modifiedBy = new ArrayCollection();
+        $this->notes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -159,6 +177,85 @@ class Note
     public function removeTag(Tag $tag): static
     {
         $this->tag->removeElement($tag);
+
+        return $this;
+    }
+
+    public function getNote(): ?self
+    {
+        return $this->note;
+    }
+
+    public function setNote(?self $note): static
+    {
+        $this->note = $note;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getModifiedBy(): Collection
+    {
+        return $this->modifiedBy;
+    }
+
+    public function addModifiedBy(self $modifiedBy): static
+    {
+        if (!$this->modifiedBy->contains($modifiedBy)) {
+            $this->modifiedBy->add($modifiedBy);
+            $modifiedBy->setNote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeModifiedBy(self $modifiedBy): static
+    {
+        if ($this->modifiedBy->removeElement($modifiedBy)) {
+            // set the owning side to null (unless already changed)
+            if ($modifiedBy->getNote() === $this) {
+                $modifiedBy->setNote(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function setModifiedBy(?self $modifiedBy): static
+    {
+        $this->modifiedBy = $modifiedBy;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getNotes(): Collection
+    {
+        return $this->notes;
+    }
+
+    public function addNote(self $note): static
+    {
+        if (!$this->notes->contains($note)) {
+            $this->notes->add($note);
+            $note->setModifiedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNote(self $note): static
+    {
+        if ($this->notes->removeElement($note)) {
+            // set the owning side to null (unless already changed)
+            if ($note->getModifiedBy() === $this) {
+                $note->setModifiedBy(null);
+            }
+        }
 
         return $this;
     }
